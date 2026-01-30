@@ -17,16 +17,13 @@ public class AnsDownloadApp {
         this.client = client;
     }
 
-    public void executar(Path pastaDestino) throws Exception {
+    public void executar(Path pastaDestino) {
         logger.info("=== INICIANDO DOWNLOAD ANS ===");
 
         List<String> links = client.buscarLinksDosUltimos3Trimestres();
 
-        if (links.isEmpty()) {
-            throw new IllegalStateException("Nenhum link encontrado");
-        }
-
         for (String link : links) {
+            logger.info("Baixando arquivo: " + link);
             client.baixarArquivo(link, pastaDestino);
         }
 

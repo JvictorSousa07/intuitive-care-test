@@ -1,5 +1,6 @@
 package br.com.joao.ans.client;
 
+import br.com.joao.ans.exception.AnsDataNotFoundException;
 import br.com.joao.ans.infra.HttpIO;
 import br.com.joao.ans.util.AnsHtmlParser;
 
@@ -21,10 +22,10 @@ public class AnsClient {
     }
 
     public AnsClient(String baseUrl) {
-        this(  baseUrl, new HttpIO(), new AnsHtmlParser()  );
+        this(baseUrl, new HttpIO(), new AnsHtmlParser());
     }
 
-    public List<String> buscarLinksDosUltimos3Trimestres() throws Exception {
+    public List<String> buscarLinksDosUltimos3Trimestres() {
         String htmlPrincipal = http.baixarHtml(baseUrl);
 
         List<String> anos = parser.extrairLinksDeAnos(htmlPrincipal);
@@ -48,11 +49,14 @@ public class AnsClient {
                 }
             }
         }
+
+        if (links.isEmpty()) {
+            throw new AnsDataNotFoundException("Nenhum arquivo ZIP de trimestre encontrado nos anos: " + anos);
+        }
         return links;
     }
 
-    public Path baixarArquivo(String url, Path destino) throws Exception {
+    public Path baixarArquivo(String url, Path destino) {
         return http.baixarArquivo(url, destino);
     }
-
 }

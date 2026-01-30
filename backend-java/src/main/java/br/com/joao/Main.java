@@ -2,10 +2,12 @@ package br.com.joao;
 
 import br.com.joao.ans.app.AnsDownloadApp;
 import br.com.joao.ans.client.AnsClient;
-import br.com.joao.ans.infra.HttpIO; // Importar
+import br.com.joao.ans.exception.AnsConnectionException;
+import br.com.joao.ans.exception.AnsDataNotFoundException;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Main {
@@ -23,9 +25,15 @@ public class Main {
 
             app.executar(pastaDownloads);
 
+        } catch (AnsConnectionException e) {
+            logger.log(Level.SEVERE, "Erro de conexão com a ANS: {0}", e.getMessage());
+
+        } catch (AnsDataNotFoundException e) {
+            logger.log(Level.WARNING, "Dados não encontrados: {0}", e.getMessage());
+
         } catch (Exception e) {
-            logger.severe("Erro fatal: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Erro inesperado na aplicação", e);
+
         }
     }
 }

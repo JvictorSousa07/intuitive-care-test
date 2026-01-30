@@ -1,5 +1,8 @@
 package br.com.joao.ans.infra;
 
+import br.com.joao.ans.exception.AnsConnectionException;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,37 +24,55 @@ public class HttpIO {
         this(HttpClient.newHttpClient());
     }
 
-    public String baixarHtml(String url) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET()
-                .build();
+    public String baixarHtml(String url){
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .GET()
+                    .build();
 
-        HttpResponse<String> response =
-                client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("Erro HTTP " + response.statusCode());
+            validarStatus(response.statusCode(), url);
+
+            return response.body();
+
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            throw new AnsConnectionException("Falha de conexão ao acessar: " + url, e);
         }
-        return response.body();
     }
 
-    public Path baixarArquivo(String url, Path destino) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET()
-                .build();
+    public Path baixarArquivo(String url, Path destino){
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .GET()
+                    .build();
 
-        HttpResponse<InputStream> response =
-                client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("Erro HTTP " + response.statusCode());
+            validarStatus(response.statusCode(), url);
+
+            if (!Files.exists(destino)) {
+                Files.createDirectories(destino);
+            }
+
+            String nomeArquivo = url.substring(url.lastIndexOf("/") + 1);
+            Path arquivo = destino.resolve(nomeArquivo);
+
+            Files.copy(response.body(), arquivo, StandardCopyOption.REPLACE_EXISTING);
+            return arquivo;
+
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            throw new AnsConnectionException("Falha ao baixar arquivo: " + url, e);
         }
+    }
 
-        Files.createDirectories(destino);
-        Path arquivo = destino.resolve(url.substring(url.lastIndexOf("/") + 1));
-        Files.copy(response.body(), arquivo, StandardCopyOption.REPLACE_EXISTING);
-        return arquivo;
+    private void validarStatus(int statusCode, String url) {
+        if (statusCode != 200) {
+            throw new AnsConnectionException("Erro HTTP " + statusCode + " ao acessar " + url);
+        }
     }
 }
