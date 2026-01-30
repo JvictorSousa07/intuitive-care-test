@@ -1,0 +1,58 @@
+package br.com.joao.ans.client;
+
+import br.com.joao.ans.infra.HttpIO;
+import br.com.joao.ans.util.AnsHtmlParser;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class AnsClient {
+
+    private final String baseUrl;
+    private final HttpIO http;
+    private final AnsHtmlParser parser;
+
+    public AnsClient(String baseUrl, HttpIO http, AnsHtmlParser parser) {
+        this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
+        this.http = http;
+        this.parser = parser;
+    }
+
+    public AnsClient(String baseUrl) {
+        this(  baseUrl, new HttpIO(), new AnsHtmlParser()  );
+    }
+
+    public List<String> buscarLinksDosUltimos3Trimestres() throws Exception {
+        String htmlPrincipal = http.baixarHtml(baseUrl);
+
+        List<String> anos = parser.extrairLinksDeAnos(htmlPrincipal);
+        anos.sort(Collections.reverseOrder());
+
+        List<String> links = new ArrayList<>();
+
+        for (String anoBruto : anos) {
+            if (links.size() >= 3) break;
+
+            String ano = anoBruto.replace("/", "");
+
+            String htmlAno = http.baixarHtml(baseUrl + ano + "/");
+            List<String> zips = parser.extrairLinksDeZip(htmlAno);
+            zips.sort(Collections.reverseOrder());
+
+            for (String zip : zips) {
+                if (links.size() >= 3) break;
+                if (zip.toUpperCase().contains("T" + ano)) {
+                    links.add(baseUrl + ano + "/" + zip);
+                }
+            }
+        }
+        return links;
+    }
+
+    public Path baixarArquivo(String url, Path destino) throws Exception {
+        return http.baixarArquivo(url, destino);
+    }
+
+}
