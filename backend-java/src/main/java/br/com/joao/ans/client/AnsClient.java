@@ -2,7 +2,7 @@ package br.com.joao.ans.client;
 
 import br.com.joao.ans.exception.AnsDataNotFoundException;
 import br.com.joao.ans.infra.HttpIO;
-import br.com.joao.ans.util.AnsHtmlParser;
+import br.com.joao.ans.infra.scraping.AnsHtmlScraper;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -13,16 +13,16 @@ public class AnsClient {
 
     private final String baseUrl;
     private final HttpIO http;
-    private final AnsHtmlParser parser;
+    private final AnsHtmlScraper parser;
 
-    public AnsClient(String baseUrl, HttpIO http, AnsHtmlParser parser) {
+    public AnsClient(String baseUrl, HttpIO http, AnsHtmlScraper parser) {
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
         this.http = http;
         this.parser = parser;
     }
 
     public AnsClient(String baseUrl) {
-        this(baseUrl, new HttpIO(), new AnsHtmlParser());
+        this(baseUrl, new HttpIO(), new AnsHtmlScraper());
     }
 
     public List<String> buscarLinksDosUltimos3Trimestres() {

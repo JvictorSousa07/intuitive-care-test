@@ -1,11 +1,11 @@
-package br.com.joao.ans.util;
+package br.com.joao.ans.infra.scraping;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class AnsHtmlParser {
+public class AnsHtmlScraper {
 
     public List<String> extrairLinksDeAnos(String html) {
         return extrair(html, "(\\d{4})/");
