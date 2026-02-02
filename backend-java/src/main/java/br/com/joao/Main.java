@@ -2,10 +2,16 @@ package br.com.joao;
 
 import br.com.joao.ans.app.AnsDownloadApp;
 import br.com.joao.ans.client.AnsClient;
-import br.com.joao.ans.infra.HttpIO; // Importar
+import br.com.joao.ans.exception.AnsConnectionException;
+import br.com.joao.ans.exception.AnsDataNotFoundException;
+import br.com.joao.ans.exception.AnsProcessingException;
+import br.com.joao.ans.processor.AnsCsvProcessor;
+import br.com.joao.ans.processor.filters.FiltroDespesaContabil;
+import br.com.joao.ans.service.AnsConsolidationService;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Main {
@@ -16,16 +22,34 @@ public class Main {
         try {
             String baseUrl = "https://dadosabertos.ans.gov.br/FTP/PDA/demonstracoes_contabeis/";
             Path pastaDownloads = Paths.get("downloads_ans");
+            Path arquivoConsolidado = Paths.get("consolidado_despesas.csv");
 
             AnsClient client = new AnsClient(baseUrl);
-
             AnsDownloadApp app = new AnsDownloadApp(client);
-
             app.executar(pastaDownloads);
 
+            logger.info(">>> Testando leitura dos ZIPs...");
+
+            AnsCsvProcessor processor = new AnsCsvProcessor(new FiltroDespesaContabil());
+            AnsConsolidationService service = new AnsConsolidationService(processor);
+
+            service.executar(pastaDownloads, arquivoConsolidado);
+
+            logger.info("=== FIM DO PROCESSO ===");
+
+
+        } catch (AnsConnectionException e) {
+            logger.log(Level.SEVERE, "Erro de conexão com a ANS: {0}", e.getMessage());
+
+        } catch (AnsDataNotFoundException e) {
+            logger.log(Level.WARNING, "Dados não encontrados: {0}", e.getMessage());
+
+        } catch (AnsProcessingException e) {
+            logger.log(Level.SEVERE, "Erro na Fase de Processamento: {0}", e.getMessage());
+
         } catch (Exception e) {
-            logger.severe("Erro fatal: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Erro inesperado na aplicação", e);
+
         }
     }
 }

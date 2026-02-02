@@ -39,3 +39,7 @@ build/
 .DS_Storedownloads_ans/
 
 downloads_ans/
+
+consolidado_despesas.csv
+consolidado_despesas.zip
+*.log
