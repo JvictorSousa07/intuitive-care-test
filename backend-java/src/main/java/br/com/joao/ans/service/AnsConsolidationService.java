@@ -33,7 +33,7 @@ public class AnsConsolidationService {
 
             List<Path> arquivosZip = listarZips(pastaEntrada);
             if (arquivosZip.isEmpty()) {
-                logger.warning("⚠️ Nenhum arquivo ZIP encontrado para processar em: " + pastaEntrada);
+                logger.warning(" Nenhum arquivo ZIP encontrado para processar em: " + pastaEntrada);
                 return;
             }
 
@@ -45,12 +45,12 @@ public class AnsConsolidationService {
                         processarArquivoIndividual(zip, writer);
                     } catch (Exception e) {
                         // Loga e continua (Resiliência), mas mantém o log severo
-                        logger.log(Level.SEVERE, "❌ Falha ao processar arquivo específico: " + zip.getFileName(), e);
+                        logger.log(Level.SEVERE, " Falha ao processar arquivo específico: " + zip.getFileName(), e);
                     }
                 }
             }
 
-            logger.info("✅ Consolidação finalizada com sucesso! Saída: " + arquivoSaida.toAbsolutePath());
+            logger.info(" Consolidação finalizada com sucesso! Saída: " + arquivoSaida.toAbsolutePath());
 
         } catch (IOException e) {
             throw new AnsProcessingException("Falha crítica ao consolidar arquivos.", e);
