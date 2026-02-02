@@ -4,17 +4,15 @@ import br.com.joao.ans.app.AnsDownloadApp;
 import br.com.joao.ans.client.AnsClient;
 import br.com.joao.ans.exception.AnsConnectionException;
 import br.com.joao.ans.exception.AnsDataNotFoundException;
+import br.com.joao.ans.exception.AnsProcessingException;
 import br.com.joao.ans.processor.AnsCsvProcessor;
 import br.com.joao.ans.processor.filters.FiltroDespesaContabil;
+import br.com.joao.ans.service.AnsConsolidationService;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 public class Main {
 
@@ -24,6 +22,7 @@ public class Main {
         try {
             String baseUrl = "https://dadosabertos.ans.gov.br/FTP/PDA/demonstracoes_contabeis/";
             Path pastaDownloads = Paths.get("downloads_ans");
+            Path arquivoConsolidado = Paths.get("consolidado_despesas.csv");
 
             AnsClient client = new AnsClient(baseUrl);
             AnsDownloadApp app = new AnsDownloadApp(client);
@@ -32,31 +31,11 @@ public class Main {
             logger.info(">>> Testando leitura dos ZIPs...");
 
             AnsCsvProcessor processor = new AnsCsvProcessor(new FiltroDespesaContabil());
+            AnsConsolidationService service = new AnsConsolidationService(processor);
 
-            try (Stream<Path> paths = Files.list(pastaDownloads)) {
-                paths.filter(p -> p.toString().endsWith(".zip"))
-                        .forEach(zip -> {
-                            try {
-                                System.out.println("\nArquivo: " + zip.getFileName());
+            service.executar(pastaDownloads, arquivoConsolidado);
 
-                                long inicio = System.currentTimeMillis();
-                                List<String[]> linhas = processor.processarZip(zip);
-                                long fim = System.currentTimeMillis();
-
-                                logger.info("Processado em: " + (fim - inicio) + "ms");
-                                logger.info("Linhas de 'Evento/Sinistro' encontradas: " + linhas.size());
-
-                                if (!linhas.isEmpty()) {
-                                    logger.info("Amostra (Linha 1): " + Arrays.toString(linhas.get(0)));
-                                } else {
-                                    logger.warning("Nenhuma linha encontrada neste arquivo.");
-                                }
-
-                            } catch (Exception e) {
-                                logger.log(Level.SEVERE, " Erro ao ler arquivo " + zip.getFileName(), e);
-                            }
-                        });
-            }
+            logger.info("=== FIM DO PROCESSO ===");
 
 
         } catch (AnsConnectionException e) {
@@ -64,6 +43,9 @@ public class Main {
 
         } catch (AnsDataNotFoundException e) {
             logger.log(Level.WARNING, "Dados não encontrados: {0}", e.getMessage());
+
+        } catch (AnsProcessingException e) {
+            logger.log(Level.SEVERE, "Erro na Fase de Processamento: {0}", e.getMessage());
 
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Erro inesperado na aplicação", e);
