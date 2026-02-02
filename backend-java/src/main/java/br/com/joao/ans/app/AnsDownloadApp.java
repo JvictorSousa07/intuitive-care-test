@@ -1,6 +1,6 @@
 package br.com.joao.ans.app;
 
-import br.com.joao.ans.client.AnsClient;
+import br.com.joao.ans.client.AnsClientImpl;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -10,10 +10,10 @@ public class AnsDownloadApp {
 
     private static final Logger logger = Logger.getLogger(AnsDownloadApp.class.getName());
 
-    private final AnsClient client;
+    private final AnsClientImpl client;
 
 
-    public AnsDownloadApp(AnsClient client) {
+    public AnsDownloadApp(AnsClientImpl client) {
         this.client = client;
     }
 

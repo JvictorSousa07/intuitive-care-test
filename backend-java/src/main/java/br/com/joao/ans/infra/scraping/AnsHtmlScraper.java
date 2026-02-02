@@ -16,13 +16,21 @@ public class AnsHtmlScraper {
         return extrair(html, "([^\"]*\\.zip)");
     }
 
+    public List<String> extrairLinksGerais(String html) {
+        return extrair(html, "[^\"]+");
+    }
+
     private List<String> extrair(String html, String regexPattern) {
         List<String> links = new ArrayList<>();
 
         Pattern pattern = Pattern.compile("href=[\"'](" + regexPattern + ")[\"']");
         Matcher matcher = pattern.matcher(html);
         while (matcher.find()) {
-            links.add(matcher.group(1));
+            String link = matcher.group(1);
+
+            if (!link.startsWith("?") && !link.equals("/")) {
+                links.add(link);
+            }
         }
         return links;
     }

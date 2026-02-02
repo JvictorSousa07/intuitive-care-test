@@ -1,13 +1,17 @@
 package br.com.joao;
 
 import br.com.joao.ans.app.AnsDownloadApp;
-import br.com.joao.ans.client.AnsClient;
+import br.com.joao.ans.client.AnsClientImpl;
 import br.com.joao.ans.exception.AnsConnectionException;
 import br.com.joao.ans.exception.AnsDataNotFoundException;
 import br.com.joao.ans.exception.AnsProcessingException;
+import br.com.joao.ans.infra.file.CadastroCsvParser;
 import br.com.joao.ans.processor.AnsCsvProcessor;
 import br.com.joao.ans.processor.filters.FiltroDespesaContabil;
+import br.com.joao.ans.service.AnsAggregationService;
 import br.com.joao.ans.service.AnsConsolidationService;
+import br.com.joao.ans.service.AnsEnrichmentService;
+import br.com.joao.ans.service.CadastroService;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,22 +24,39 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            String baseUrl = "https://dadosabertos.ans.gov.br/FTP/PDA/demonstracoes_contabeis/";
+            String urlDemonstracoes = "https://dadosabertos.ans.gov.br/FTP/PDA/demonstracoes_contabeis/";
+            String urlCadastro = "https://dadosabertos.ans.gov.br/FTP/PDA/operadoras_de_plano_de_saude_ativas/";
+
             Path pastaDownloads = Paths.get("downloads_ans");
             Path arquivoConsolidado = Paths.get("consolidado_despesas.csv");
+            Path arquivoFinal = Paths.get("despesas_enriquecidas.csv");
+            Path arquivoAgregado = Paths.get("despesas_agregadas.csv");
 
-            AnsClient client = new AnsClient(baseUrl);
-            AnsDownloadApp app = new AnsDownloadApp(client);
-            app.executar(pastaDownloads);
+            AnsClientImpl clientDemonstracoes = new AnsClientImpl(urlDemonstracoes);
+            AnsClientImpl clientCadastro = new AnsClientImpl(urlCadastro);
 
-            logger.info(">>> Testando leitura dos ZIPs...");
+            AnsCsvProcessor csvProcessor = new AnsCsvProcessor(new FiltroDespesaContabil());
+            CadastroCsvParser cadastroParser = new CadastroCsvParser();
 
-            AnsCsvProcessor processor = new AnsCsvProcessor(new FiltroDespesaContabil());
-            AnsConsolidationService service = new AnsConsolidationService(processor);
+            AnsDownloadApp downloadApp = new AnsDownloadApp(clientDemonstracoes);
 
-            service.executar(pastaDownloads, arquivoConsolidado);
+            AnsConsolidationService consolidationService = new AnsConsolidationService(csvProcessor);
+
+            CadastroService cadastroService = new CadastroService(clientCadastro, cadastroParser);
+
+            AnsEnrichmentService enrichmentService = new AnsEnrichmentService(cadastroService);
+            AnsAggregationService aggregationService = new AnsAggregationService();
+
+            downloadApp.executar(pastaDownloads);
+
+            consolidationService.executar(pastaDownloads, arquivoConsolidado);
+
+            logger.info(">>> Iniciando Fase 2: Enriquecimento...");
+            enrichmentService.executar(arquivoConsolidado, pastaDownloads, arquivoFinal);
+            aggregationService.executar(arquivoFinal, arquivoAgregado);
 
             logger.info("=== FIM DO PROCESSO ===");
+            logger.info("Arquivo gerado: " + arquivoFinal.toAbsolutePath());
 
 
         } catch (AnsConnectionException e) {

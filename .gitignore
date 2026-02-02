@@ -38,8 +38,9 @@ build/
 ### Mac OS ###
 .DS_Storedownloads_ans/
 
+# --- Arquivos Gerados pelo Sistema (ETL) ---
 downloads_ans/
-
 consolidado_despesas.csv
-consolidado_despesas.zip
-*.log
+despesas_enriquecidas.csv
+despesas_agregadas.csv
+Relatorio_cadop.csv
