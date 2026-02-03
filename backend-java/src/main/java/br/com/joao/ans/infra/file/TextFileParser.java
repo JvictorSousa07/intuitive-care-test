@@ -23,7 +23,9 @@ public class TextFileParser implements FileParserStrategy {
     public List<String[]> parse(InputStream inputStream, String termoOtimizacao) throws IOException {
         List<String[]> linhas = new ArrayList<>();
 
+
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.ISO_8859_1));
+
 
         String linha;
         while ((linha = reader.readLine()) != null) {

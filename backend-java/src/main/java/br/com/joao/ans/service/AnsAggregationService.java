@@ -53,7 +53,7 @@ public class AnsAggregationService {
                         stat.getDesvioPadrao().toString().replace(".", ",")));
                 writer.newLine();
             }
-            logger.info("✅ Agregação concluída: " + arquivoSaida.toAbsolutePath());
+            logger.info("Agregação concluída: " + arquivoSaida.toAbsolutePath());
 
         } catch (IOException e) {
             logger.severe("Erro ao salvar: " + e.getMessage());

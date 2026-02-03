@@ -61,7 +61,6 @@ public class AnsClientImpl implements AnsClient{
         String urlFinal = url;
 
         if (!url.toLowerCase().startsWith("http")) {
-            // Lógica para garantir que não fique barra duplicada nem faltando barra
             if (this.baseUrl.endsWith("/") && url.startsWith("/")) {
                 urlFinal = this.baseUrl + url.substring(1);
             } else if (!this.baseUrl.endsWith("/") && !url.startsWith("/")) {
@@ -74,6 +73,7 @@ public class AnsClientImpl implements AnsClient{
         return http.baixarArquivo(urlFinal, destino);
     }
 
+    @Override
     public List<String> listarArquivos(String subDiretorio) {
         String urlCompleta = baseUrl + (subDiretorio == null ? "" : subDiretorio);
         String html = http.baixarHtml(urlCompleta);

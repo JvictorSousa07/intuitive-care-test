@@ -1,6 +1,6 @@
 package br.com.joao.ans.service;
 
-import br.com.joao.ans.exception.AnsProcessingException; // Import novo
+import br.com.joao.ans.exception.AnsProcessingException;
 import br.com.joao.ans.infra.file.AnsConsolidatedWriter;
 import br.com.joao.ans.processor.AnsCsvProcessor;
 import br.com.joao.ans.util.FileMetadataUtils;
@@ -80,6 +80,6 @@ public class AnsConsolidationService {
                 count++;
             }
         }
-        logger.info("      Linhas importadas: " + count);
+        logger.info("   Linhas importadas: " + count);
     }
 }

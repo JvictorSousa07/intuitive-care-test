@@ -12,7 +12,6 @@ public class EnrichedCsvWriter implements AutoCloseable {
     private final BufferedWriter writer;
 
     public EnrichedCsvWriter(Path arquivoFinal) throws IOException {
-        // Garante que diretórios existem
         if (arquivoFinal.getParent() != null) {
             Files.createDirectories(arquivoFinal.getParent());
         }
@@ -27,7 +26,6 @@ public class EnrichedCsvWriter implements AutoCloseable {
     public void escreverLinha(String regAns, String cnpj, String razao, String modalidade, String uf,
                               String data, String trimestre, String ano, String valor, String statusCnpj) throws IOException {
 
-        // Tratamento de nulos para evitar "null" no CSV
         String linha = String.format("%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
                 tratar(regAns), tratar(cnpj), tratar(razao), tratar(modalidade), tratar(uf),
                 tratar(data), tratar(trimestre), tratar(ano), tratar(valor), tratar(statusCnpj));
