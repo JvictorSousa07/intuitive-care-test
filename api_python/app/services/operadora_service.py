@@ -25,7 +25,6 @@ class OperadoraService:
         }
 
     def buscar_detalhes(self, cnpj):
-        # Regra de negócio: Limpar formatação do CNPJ antes de buscar
         cnpj_limpo = cnpj.replace(".", "").replace("/", "").replace("-", "")
         return self.repository.find_by_cnpj(cnpj_limpo)
 
