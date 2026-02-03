@@ -1,46 +1,39 @@
+# --- Java / Maven ---
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-.kotlin
+*.class
 
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+# --- IDEs (IntelliJ, VS Code, Eclipse) ---
+.idea/
 *.iws
 *.iml
 *.ipr
-
-### Eclipse ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
 .vscode/
+.classpath
+.project
+.settings/
 
-### Mac OS ###
-.DS_Storedownloads_ans/
+# --- Python (FastAPI) ---
+__pycache__/
+*.pyc
+.env
+venv/
+.pytest_cache/
 
-# --- Arquivos Gerados pelo Sistema (ETL) ---
+# --- Frontend (Vue.js / Node) - CRÍTICO NÃO ESQUECER ---
+node_modules/
+dist/
+npm-debug.log
+yarn-error.log
+
+# --- Arquivos Gerados pelo Sistema (ETL e Dados) ---
 downloads_ans/
-consolidado_despesas.csv
-despesas_enriquecidas.csv
-despesas_agregadas.csv
-Relatorio_cadop.csv
+*.zip
+*.csv
+!queries_tarefa3.sql  # (O "!" diz para NÃO ignorar o SQL, esse nós queremos)
+
+# --- Sistema Operacional ---
+.DS_Store
+Thumbs.db

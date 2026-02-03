@@ -1,76 +1,114 @@
-# Intuitive Care - Desafio Técnico (Backend Java)
+# Intuitive Care - Desafio Técnico (Fullstack)
 
-Este repositório contém a solução para o teste técnico de Backend da Intuitive Care. O projeto foi desenvolvido em **Java**.
+Este repositório contém a solução completa para o teste técnico da Intuitive Care. O projeto abrange desde o ETL de dados da ANS (Java), modelagem de banco de dados (SQL) até a visualização em uma aplicação Web (Python + Vue.js).
 
 ## Status do Projeto
-- [x] **Tarefa 1**: Integração, Processamento e Consolidação (ETL)
-- [x] **Tarefa 2**: Transformação, Validação e Enriquecimento
-- [ ] **Tarefa 3**: Modelagem de Dados e SQL
-- [ ] **Tarefa 4**: API e Visualização (Frontend)
+- [x] **Tarefa 1**: Integração, Processamento e Consolidação (ETL - Java)
+- [x] **Tarefa 2**: Transformação, Validação e Enriquecimento (Java)
+- [x] **Tarefa 3**: Modelagem de Dados e SQL (PostgreSQL)
+- [x] **Tarefa 4**: API e Visualização (Python FastAPI + Vue.js)
 
 ---
 
-## Arquitetura e Design Patterns
+## 1. Backend Java (ETL e Processamento)
 
-1.  **Layered Architecture (Camadas):**
-    * `app`: Entrada da aplicação.
-    * `service`: Regras de Negócio e Orquestração (`AnsEnrichmentService`, `CadastroService`).
-    * `client`: Abstração de chamadas externas (HTTP/FTP).
-    * `domain`: Entidades e Objetos de Valor (`Operadora`, `UF`, `OperadoraStats`).
-    * `infra`: Implementações de baixo nível (File I/O, Parsers).
+Responsável por baixar, processar e sanitizar os dados da ANS.
 
-2.  **Injeção de Dependência (Manual):**
-    * A classe `Main` atua como o orquestrador (*Root Composition*), instanciando as dependências (`Parsers`, `Clients`) e injetando-as nos `Services` via construtor. Isso eliminou o acoplamento forte e aumentou a testabilidade.
+### Arquitetura e Design Patterns
+* **Layered Architecture:** Separação clara entre `domain` (entidades), `service` (regras de negócio) e `infra` (parsers de arquivo).
+* **Injeção de Dependência Manual:** A classe `Main` atua como orquestrador, injetando dependências via construtor para facilitar testes.
+* **Strategy Pattern:** Utilizado no `FileParserStrategy` para suportar diferentes formatos de arquivos dentro dos ZIPs da ANS.
 
-3.  **Enum Pattern & Type Safety:**
-    * Utilização do Enum `UF` com lógica de *lookup* robusta. Isso impede que dados sujos (como datas ou números) sejam inseridos incorretamente nos campos de estado, garantindo a integridade do dado desde a leitura.
+### Trade-offs e Decisões Técnicas (Java)
 
-4.  **Strategy Pattern:**
-    * Mantido no `FileParserStrategy` para flexibilidade na leitura de diferentes formatos dentro dos ZIPs.
+#### 1.1 Processamento: Memória vs. Streaming
+* **Decisão:** Processamento Incremental (Streaming).
+* **Solução:** Uso de `ZipInputStream` + `BufferedReader`.
+* **Justificativa:** Para evitar `OutOfMemoryError` com arquivos grandes, o streaming mantém o consumo de RAM constante (O(1)), processando linha a linha sem carregar o arquivo todo.
 
----
+#### 1.2 Estratégia de Enriquecimento (Join)
+* **Decisão:** *In-Memory Hash Join*.
+* **Solução:** Carregamento do CSV de cadastro (`Relatorio_cadop.csv`) em um `HashMap`.
+* **Justificativa:** O arquivo de cadastro é pequeno comparado ao de despesas. O acesso via Hash Map é O(1), sendo drasticamente mais rápido que *Nested Loops* ou consultas repetitivas em banco.
 
-## Trade-offs e Decisões Técnicas (Análise Crítica)
-
-Abaixo estão as justificativas para as decisões de implementação das Tarefas 1 e 2:
-
-### 1. Processamento: Memória vs. Streaming (Tarefa 1)
-**Decisão:** Processamento Incremental (Streaming).
-* **Solução:** Utilização de `ZipInputStream` combinado com `BufferedReader`.
-* **Justificativa:** Os arquivos da ANS podem ser grandes. Carregar tudo em memória causaria `OutOfMemoryError`. O uso de Streams mantém o consumo de RAM constante (O(1)), independente do tamanho do arquivo.
-
-### 2. Estratégia de Enriquecimento/Join (Tarefa 2)
-**Decisão:** *In-Memory Hash Join*.
-* **Implementação:** O arquivo de cadastro (`Relatorio_cadop.csv`) é carregado inteiramente em um `HashMap<String, Operadora>`, onde a chave é o `REG_ANS`.
-* **Justificativa:** O arquivo de cadastro é pequeno (alguns MBs) comparado ao volume de despesas. Carregá-lo em memória permite acesso O(1) durante o processamento. Isso é drasticamente mais rápido do que fazer *Nested Loops* (O(n*m)) ou consultas em banco linha a linha.
-* **Tratamento de Chaves:** Implementada limpeza explícita de aspas (`"`) nas chaves para garantir o *match* exato entre os arquivos CSV.
-
-### 3. Validação de CNPJ (Tarefa 2)
-**Decisão:** *Soft Validation* (Validação sem descarte).
-* **Implementação:** Classe `CnpjUtils` verifica os dígitos verificadores (Módulo 11). Se inválido, a linha é persistida com o status `INVALIDO`.
-* **Justificativa:** Em sistemas financeiros, a integridade do valor contábil é prioritária. Descartar uma despesa milionária por um erro de digitação no cadastro geraria "furos" no balanço contábil. A melhor abordagem é persistir e marcar para auditoria.
-
-### 4. Robustez na Leitura de Dados (Tarefa 2)
-**Problema:** O layout do CSV da ANS variava, fazendo com que datas (`1998-12-17`) fossem lidas incorretamente como UFs (Estados).
-**Solução:** Implementação de um parser inteligente com `Enum`. O sistema varre as colunas em busca de siglas válidas (ex: SP, RJ) e ignora qualquer valor que não seja um estado brasileiro válido.
+#### 1.3 Validação de CNPJ
+* **Decisão:** *Soft Validation* (Persistir inválidos).
+* **Justificativa:** Em contextos financeiros/contábeis, descartar registros pode gerar "furos" no balanço. Optei por persistir a linha marcando-a como `INVALIDO` para posterior auditoria, garantindo a integridade do montante total.
 
 ---
 
-## Como Executar
+## 2. Banco de Dados e SQL (Tarefa 3)
+
+Os scripts SQL localizados no arquivo `queries_tarefa3.sql` são responsáveis por estruturar o banco e responder às perguntas de negócio.
+
+### Trade-offs e Decisões de Modelagem
+
+#### 2.1 Normalização vs Desnormalização
+* **Decisão:** Modelagem Normalizada (Tabelas Relacionais).
+* **Estrutura:** Criei uma tabela `operadoras` (dimensão) separada da tabela `despesas` (fatos).
+* **Justificativa:**
+    1.  **Integridade:** Garante que não existam despesas órfãs sem uma operadora válida.
+    2.  **Espaço:** Evita a repetição desnecessária dos dados cadastrais (Razão Social, UF) em milhões de linhas de despesas.
+    3.  **Manutenção:** Se uma operadora mudar de nome, atualizamos apenas 1 registro.
+
+#### 2.2 Tipos de Dados Monetários
+* **Decisão:** `DECIMAL(15, 2)` (PostgreSQL).
+* **Justificativa:** Jamais utilizar `FLOAT` para dinheiro devido a erros de precisão em ponto flutuante (ex: 0.1 + 0.2 resultando em 0.300000004). O `DECIMAL` garante a precisão exata dos centavos exigida em relatórios contábeis.
+
+---
+
+## 3. Aplicação Web (Tarefa 4)
+
+Solução Fullstack para visualização dos dados processados.
+
+### 3.1 Backend: Python com FastAPI (Clean Arch)
+* **Organização:** `Routers` (Endpoints), `Services` (Regra de Negócio), `Repositories` (SQL Puro).
+* **Framework (FastAPI):** Escolhido pela performance assíncrona e geração automática de documentação (Swagger), superior ao Flask para APIs modernas.
+* **SQL Puro:** Optei por não usar ORM para demonstrar controle total sobre as queries SQL e otimizar a performance de leitura (`read-heavy`).
+* **Paginação:** Implementada via `LIMIT/OFFSET` no banco para não sobrecarregar a memória do servidor.
+
+### 3.2 Frontend: Vue.js + Vite
+Interface moderna e componentizada.
+* **Componentização:** Separação em `GraficoUF.vue` (Chart.js), `OperadoraModal.vue` e `Home.vue`.
+* **Estilo:** Uso de **TailwindCSS** para produtividade e design responsivo.
+* **UX:** Feedback visual de *loading* e tratamento de erros de API.
+
+---
+
+## Como Executar o Projeto Completo
 
 ### Pré-requisitos
-* Java 11 ou superior
-* Maven
+* Java + e Maven
+* Python 3.8+
+* Node.js e NPM
+* PostgreSQL
 
-### Passo a Passo
-1.  Clone o repositório.
-2.  Na raiz do projeto, execute a classe principal:
-    ```bash
-    br.com.joao.Main
-    ```
-3.  **O Fluxo de Execução:**
-    * **Passo 1 (ETL):** O sistema baixa os ZIPs da ANS e gera o arquivo `consolidado_despesas.csv` (Dados brutos).
-    * **Passo 2 (Enriquecimento):** Baixa o cadastro de operadoras, cruza os dados pelo `REG_ANS`, valida os CNPJs e gera o arquivo **`despesas_enriquecidas.csv`**.
-    * **Passo 3 (Agregação):** Agrupa os valores por Operadora/UF, calcula média trimestral e desvio padrão, gerando o arquivo final **`despesas_agregadas.csv`**.
+### Passo 1: Processamento Java (ETL)
+```bash
+# Na raiz do projeto
+mvn clean install
+java -jar target/intuitive-care-test-1.0-SNAPSHOT.jar
+# Isso gerará os CSVs na pasta raiz
+````
 
----
+Passo 2: Banco de Dados
+Crie um banco de dados chamado ans_db.
+
+Execute o script queries_tarefa3.sql no seu cliente SQL (pgAdmin/DBeaver) para criar as tabelas e importar os CSVs gerados no passo anterior.
+
+### Passo 3: API Python
+
+```bash
+cd api_python
+pip install -r requirements.txt
+python -m app.main
+# A API rodará em http://localhost:8000
+```
+
+### Passo 4: Frontend Vue.js
+
+```bash cd frontend_vue
+npm install
+npm run dev
+# Acesse o link gerado (ex: http://localhost:5173)
+```
